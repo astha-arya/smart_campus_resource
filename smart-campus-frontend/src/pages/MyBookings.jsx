@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API        = 'http://localhost:5001';
+const API = 'https://smart-campus-resource.onrender.com';
 const STATUS_TAG = { approved: 'tag-green', pending: 'tag-yellow', rejected: 'tag-red' };
 const TYPE_ICON  = { classroom: '📖', lab: '🧪', hall: '🏛️' };
 const capitalize = (s = '') => s.charAt(0).toUpperCase() + s.slice(1);

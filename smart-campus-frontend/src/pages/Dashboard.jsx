@@ -19,7 +19,7 @@ function avatarStyle(name = '') {
   return palettes[name.charCodeAt(0) % palettes.length];
 }
 
-const API = 'http://localhost:5001';
+const API = 'https://smart-campus-resource.onrender.com';
 
 export default function Dashboard() {
   const navigate = useNavigate();

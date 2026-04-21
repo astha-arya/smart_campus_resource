@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BookingModal from '../components/BookingModal';
 
-const API = 'http://localhost:5001';
+const API = 'https://smart-campus-resource.onrender.com';
 
 const FLOORS = [
   { num: 15, dept: 'CTECH'       }, { num: 14, dept: 'CTECH'       },

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const API        = 'http://localhost:5001';
+const API = 'https://smart-campus-resource.onrender.com';
 const capitalize = (s = '') => s.charAt(0).toUpperCase() + s.slice(1);
 
 function avatarStyle(name = '') {

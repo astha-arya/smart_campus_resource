@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
-const API = 'http://localhost:5001';
+const API = 'https://smart-campus-resource.onrender.com';
 
 function getInitials(name = '') {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);

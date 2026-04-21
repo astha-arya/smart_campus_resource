@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const API = 'http://localhost:5001';
+const API = 'https://smart-campus-resource.onrender.com';
 
 // FIX: Get the local date, not the UTC date!
 const todayISO = () => {
