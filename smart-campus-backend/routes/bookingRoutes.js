@@ -5,6 +5,7 @@ const {
   getMyBookings,
   getAllBookings,
   updateBookingStatus,
+  cancelBooking
 } = require("../controllers/bookingController");
 
 // IMPORTANT: /all and /my-bookings/:userId are both GET routes on the same
@@ -15,5 +16,6 @@ router.get("/all", getAllBookings);
 router.get("/my-bookings/:userId", getMyBookings);
 router.post("/", createBooking);
 router.put("/:id/status", updateBookingStatus);
+router.put('/:id/cancel', cancelBooking);
 
 module.exports = router;
