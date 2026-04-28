@@ -10,7 +10,7 @@ const FILTER_OPTS = [
   { key: 'approved',  label: 'Approved'  },
   { key: 'pending',   label: 'Pending'   },
   { key: 'rejected',  label: 'Rejected'  },
-  { key: 'cancelled', label: 'Cancelled' }, // Added cancelled tab
+  { key: 'cancelled', label: 'Cancelled' },
 ];
 
 export default function MyBookings() {
@@ -18,7 +18,9 @@ export default function MyBookings() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
-  const [cancellingId, setCancellingId] = useState(null); // Tracks which button is loading
+  
+  const [cancellingId, setCancellingId] = useState(null); 
+  const [bookingToCancel, setBookingToCancel] = useState(null); // Controls our custom modal
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -43,13 +45,14 @@ export default function MyBookings() {
     fetchBookings();
   }, [user.userId]);
 
-  // ── Handle Soft Cancel ────────────────────────────────────────────────────
-  const handleCancel = async (bookingId) => {
-    if (!window.confirm('Are you sure you want to cancel this booking? This will free up the room for others.')) return;
+  // ── Handle Soft Cancel (Now triggered by Custom Modal) ────────────────────
+  const executeCancel = async () => {
+    if (!bookingToCancel) return;
+    const targetId = bookingToCancel;
 
-    setCancellingId(bookingId);
+    setCancellingId(targetId);
     try {
-      const res = await fetch(`${API}/api/bookings/${bookingId}/cancel`, {
+      const res = await fetch(`${API}/api/bookings/${targetId}/cancel`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -60,11 +63,14 @@ export default function MyBookings() {
         return;
       }
 
-      // Optimistically update the UI so the user sees the change instantly
+      // Optimistically update UI
       setBookings(prev => prev.map(b => 
-        b._id === bookingId ? { ...b, status: 'cancelled' } : b
+        b._id === targetId ? { ...b, status: 'cancelled' } : b
       ));
       
+      // Close the modal
+      setBookingToCancel(null);
+
     } catch (err) {
       window.alert('Cannot reach the server to cancel.');
     } finally {
@@ -77,7 +83,64 @@ export default function MyBookings() {
     : bookings.filter(b => b.status === statusFilter);
 
   return (
-    <div className="view-enter">
+    <div className="view-enter" style={{ position: 'relative' }}>
+
+      {/* ── CUSTOM CONFIRMATION MODAL ── */}
+      {bookingToCancel && (
+        <div 
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'fadeIn 0.2s ease'
+          }}
+        >
+          <div 
+            style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 16, padding: 32, width: '90%', maxWidth: 400,
+              boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
+              animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            <div style={{ fontSize: 24, marginBottom: 12 }}>⚠️</div>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, fontFamily: "'Syne', sans-serif" }}>
+              Cancel this booking?
+            </h3>
+            <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.5, marginBottom: 24 }}>
+              Are you sure you want to cancel this reservation? This action will immediately free up the room for others to book.
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setBookingToCancel(null)}
+                disabled={cancellingId === bookingToCancel}
+                style={{
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text)', padding: '10px 16px', borderRadius: 8,
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Keep It
+              </button>
+              <button 
+                onClick={executeCancel}
+                disabled={cancellingId === bookingToCancel}
+                style={{
+                  background: 'rgba(255,82,102,0.1)', border: '1px solid rgba(255,82,102,0.3)',
+                  color: 'var(--red)', padding: '10px 16px', borderRadius: 8,
+                  fontSize: 13, fontWeight: 600, cursor: cancellingId === bookingToCancel ? 'wait' : 'pointer',
+                  transition: 'all 0.2s', opacity: cancellingId === bookingToCancel ? 0.6 : 1
+                }}
+              >
+                {cancellingId === bookingToCancel ? 'Cancelling...' : 'Yes, Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── STATUS FILTERS ── */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24, overflowX: 'auto', paddingBottom: 4 }}>
@@ -142,7 +205,6 @@ export default function MyBookings() {
                   ? `${bookingStart} – ${bookingEnd}`
                   : bookingStart ?? '—';
 
-                // Check if we should show the cancel button
                 const canCancel = b.status === 'pending' || b.status === 'approved';
 
                 return (
@@ -182,33 +244,35 @@ export default function MyBookings() {
                       
                       {canCancel && (
                         <button 
-                          onClick={() => handleCancel(b._id)}
-                          disabled={cancellingId === b._id}
+                          onClick={() => setBookingToCancel(b._id)}
                           style={{
-                            background: 'transparent',
-                            border: '1px solid var(--border)',
-                            color: 'var(--red)',
-                            borderRadius: 6,
-                            padding: '4px 10px',
-                            fontSize: 11,
-                            cursor: cancellingId === b._id ? 'wait' : 'pointer',
-                            opacity: cancellingId === b._id ? 0.5 : 0.8,
+                            background: 'transparent', border: '1px solid var(--border)',
+                            color: 'var(--red)', borderRadius: 6, padding: '4px 10px',
+                            fontSize: 11, cursor: 'pointer', opacity: 0.8,
                             transition: 'all 0.2s',
                           }}
                           onMouseOver={(e) => e.target.style.opacity = 1}
                           onMouseOut={(e) => e.target.style.opacity = 0.8}
                         >
-                          {cancellingId === b._id ? 'Cancelling...' : 'Cancel'}
+                          Cancel
                         </button>
                       )}
                     </div>
-
                   </div>
                 );
               })}
             </div>
           )
       )}
+
+      {/* ── ANIMATION STYLES FOR MODAL ── */}
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { 
+          from { opacity: 0; transform: translateY(20px) scale(0.95); } 
+          to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+      `}</style>
     </div>
   );
 }
