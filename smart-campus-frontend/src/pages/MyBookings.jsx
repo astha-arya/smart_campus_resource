@@ -77,10 +77,10 @@ export default function MyBookings() {
       setCancellingId(null);
     }
   };
-  const displayed = []; // <-- BUG:
-  // const displayed = statusFilter === 'all'
-  //   ? bookings
-  //   : bookings.filter(b => b.status === statusFilter);
+
+  const displayed = statusFilter === 'all'
+    ? bookings
+    : bookings.filter(b => b.status === statusFilter);
 
   return (
     <div className="view-enter" style={{ position: 'relative' }}>
